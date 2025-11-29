@@ -33,8 +33,8 @@ if [ $ZLIB != NONE ]; then
 
         *)
             have=NGX_ZLIB . auto/have
-            LINK_DEPS="$LINK_DEPS $ZLIB/libz.a"
-            CORE_LIBS="$CORE_LIBS $ZLIB/libz.a"
+            LINK_DEPS="$LINK_DEPS $ZLIB/libz-ng.a"
+            CORE_LIBS="$CORE_LIBS $ZLIB/libz-ng.a"
             #CORE_LIBS="$CORE_LIBS -L $ZLIB -lz"
         ;;
 
@@ -50,10 +50,10 @@ else
         ngx_feature="zlib library"
         ngx_feature_name="NGX_ZLIB"
         ngx_feature_run=no
-        ngx_feature_incs="#include <zlib.h>"
+        ngx_feature_incs="#include <zlib-ng.h>"
         ngx_feature_path=
-        ngx_feature_libs="-lz"
-        ngx_feature_test="z_stream z; deflate(&z, Z_NO_FLUSH)"
+        ngx_feature_libs="-lz-ng"
+        ngx_feature_test="zng_stream z; zng_deflate(&z, Z_NO_FLUSH)"
         . auto/feature
 
 

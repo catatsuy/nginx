@@ -9,7 +9,14 @@
 #include <ngx_core.h>
 #include <ngx_http.h>
 
-#include <zlib.h>
+#if defined(NGX_ZLIB_NG)
+# include <zlib-ng.h>
+# define ZPREFIX(x) zng_ ## x
+# define z_stream zng_stream
+#elif defined(NGX_ZLIB)
+# include <zlib.h>
+# define ZPREFIX(x) x
+#endif
 
 
 typedef struct {
@@ -454,7 +461,7 @@ failed:
     ctx->done = 1;
 
     if (ctx->preallocated) {
-        deflateEnd(&ctx->zstream);
+        ZPREFIX(deflateEnd)(&ctx->zstream);
 
         ngx_pfree(r->pool, ctx->preallocated);
     }
@@ -515,21 +522,20 @@ ngx_http_gzip_filter_memory(ngx_http_request_t *r, ngx_http_gzip_ctx_t *ctx)
     } else {
         /*
          * Another zlib variant, https://github.com/zlib-ng/zlib-ng.
-         * It used to force window bits to 13 for fast compression level,
-         * used (64 + sizeof(void*)) additional space on all allocations
-         * for alignment and 16-byte padding in one of window-sized buffers,
-         * uses a single allocation with up to 200 bytes for alignment and
-         * internal pointers, 5/4 times more memory for the pending buffer,
-         * and 128K hash.
          */
 
-        if (conf->level == 1) {
-            wbits = ngx_max(wbits, 13);
-        }
-
-        ctx->allocated = 8192 + 16 + (1 << (wbits + 2))
-                         + 131072 + (5 << (memlevel + 6))
-                         + 4 * (64 + sizeof(void*));
+        ctx->allocated = 6144 // State
+                      + 65536 // Window
+                      + 65536 // Prev
+                     + 131072 // Head
+                     + 163840 // Pending
+                     + 56 + 8 // Alloc struct + padding
+#if (defined(__s390__) || defined(__s390x__) || defined(__zarch__))
+                       + 4096 // Required to fix allocation alignment
+#else
+                         + 64 // Required to fix allocation alignment
+#endif
+                       + 256; // Extra to allow for future changes
         ctx->zlib_ng = 1;
     }
 }
@@ -623,7 +629,7 @@ ngx_http_gzip_filter_deflate_start(ngx_http_request_t *r,
     ctx->zstream.zfree = ngx_http_gzip_filter_free;
     ctx->zstream.opaque = ctx;
 
-    rc = deflateInit2(&ctx->zstream, (int) conf->level, Z_DEFLATED,
+    rc = ZPREFIX(deflateInit2)(&ctx->zstream, (int) conf->level, Z_DEFLATED,
                       ctx->wbits + 16, ctx->memlevel, Z_DEFAULT_STRATEGY);
 
     if (rc != Z_OK) {
@@ -758,7 +764,7 @@ ngx_http_gzip_filter_deflate(ngx_http_request_t *r, ngx_http_gzip_ctx_t *ctx)
                  ctx->zstream.avail_in, ctx->zstream.avail_out,
                  ctx->flush, ctx->redo);
 
-    rc = deflate(&ctx->zstream, ctx->flush);
+    rc = ZPREFIX(deflate)(&ctx->zstream, ctx->flush);
 
     if (rc != Z_OK && rc != Z_STREAM_END && rc != Z_BUF_ERROR) {
         ngx_log_error(NGX_LOG_ALERT, r->connection->log, 0,
@@ -882,7 +888,7 @@ ngx_http_gzip_filter_deflate_end(ngx_http_request_t *r,
     ctx->zin = ctx->zstream.total_in;
     ctx->zout = ctx->zstream.total_out;
 
-    rc = deflateEnd(&ctx->zstream);
+    rc = ZPREFIX(deflateEnd)(&ctx->zstream);
 
     if (rc != Z_OK) {
         ngx_log_error(NGX_LOG_ALERT, r->connection->log, 0,

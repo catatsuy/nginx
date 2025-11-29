@@ -10,7 +10,14 @@
 #include <ngx_core.h>
 #include <ngx_http.h>
 
-#include <zlib.h>
+#if defined(NGX_ZLIB_NG)
+# include <zlib-ng.h>
+# define ZPREFIX(x) zng_ ## x
+# define z_stream zng_stream
+#elif defined(NGX_ZLIB)
+# include <zlib.h>
+# define ZPREFIX(x) x
+#endif
 
 
 typedef struct {
@@ -312,7 +319,7 @@ ngx_http_gunzip_filter_inflate_start(ngx_http_request_t *r,
     ctx->zstream.opaque = ctx;
 
     /* windowBits +16 to decode gzip, zlib 1.2.0.4+ */
-    rc = inflateInit2(&ctx->zstream, MAX_WBITS + 16);
+    rc = ZPREFIX(inflateInit2)(&ctx->zstream, MAX_WBITS + 16);
 
     if (rc != Z_OK) {
         ngx_log_error(NGX_LOG_ALERT, r->connection->log, 0,
@@ -435,7 +442,7 @@ ngx_http_gunzip_filter_inflate(ngx_http_request_t *r,
                    ctx->zstream.avail_in, ctx->zstream.avail_out,
                    ctx->flush, ctx->redo);
 
-    rc = inflate(&ctx->zstream, ctx->flush);
+    rc = ZPREFIX(inflate)(&ctx->zstream, ctx->flush);
 
     if (rc != Z_OK && rc != Z_STREAM_END && rc != Z_BUF_ERROR) {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
@@ -533,7 +540,7 @@ ngx_http_gunzip_filter_inflate(ngx_http_request_t *r,
 
     if (rc == Z_STREAM_END && ctx->zstream.avail_in > 0) {
 
-        rc = inflateReset(&ctx->zstream);
+        rc = ZPREFIX(inflateReset)(&ctx->zstream);
 
         if (rc != Z_OK) {
             ngx_log_error(NGX_LOG_ALERT, r->connection->log, 0,
@@ -584,7 +591,7 @@ ngx_http_gunzip_filter_inflate_end(ngx_http_request_t *r,
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "gunzip inflate end");
 
-    rc = inflateEnd(&ctx->zstream);
+    rc = ZPREFIX(inflateEnd)(&ctx->zstream);
 
     if (rc != Z_OK) {
         ngx_log_error(NGX_LOG_ALERT, r->connection->log, 0,
