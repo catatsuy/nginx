@@ -50,12 +50,12 @@ END
 
             cat << END                                        >> $NGX_MAKEFILE
 
-$ZLIB/libz.a:	$NGX_MAKEFILE
+$ZLIB/libz-ng.a:	$NGX_MAKEFILE
 	cd $ZLIB \\
 	&& if [ -f Makefile ]; then \$(MAKE) distclean; fi \\
 	&& \$(MAKE) -f win32/Makefile.gcc \\
 		CFLAGS="$ZLIB_OPT" CC="\$(CC)" \\
-		libz.a
+		libz-ng.a
 
 END
 
@@ -73,13 +73,13 @@ END
 
                 cat << END                                    >> $NGX_MAKEFILE
 
-$ZLIB/libz.a:	$NGX_MAKEFILE
+$ZLIB/libz-ng.a:	$NGX_MAKEFILE
 	cd $ZLIB \\
 	&& if [ -f Makefile ]; then \$(MAKE) distclean; fi \\
 	&& cp contrib/asm586/match.S . \\
 	&& CFLAGS="$ZLIB_OPT -DASMV" CC="\$(CC)" \\
 		./configure $ZLIB_CONF_OPT \\
-	&& \$(MAKE) OBJA=match.o libz.a
+	&& \$(MAKE) OBJA=match.o libz-ng.a
 
 END
 
@@ -90,13 +90,13 @@ END
 
                 cat << END                                    >> $NGX_MAKEFILE
 
-$ZLIB/libz.a:	$NGX_MAKEFILE
+$ZLIB/libz-ng.a:	$NGX_MAKEFILE
 	cd $ZLIB \\
 	&& if [ -f Makefile ]; then \$(MAKE) distclean; fi \\
 	&& cp contrib/asm686/match.S . \\
 	&& CFLAGS="$ZLIB_OPT -DASMV" CC="\$(CC)" \\
 		./configure $ZLIB_CONF_OPT \\
-	&& \$(MAKE) OBJA=match.o libz.a
+	&& \$(MAKE) OBJA=match.o libz-ng.a
 
 END
 
@@ -123,12 +123,12 @@ if [ $done = NO ]; then
 
     cat << END                                                >> $NGX_MAKEFILE
 
-$ZLIB/libz.a:	$NGX_MAKEFILE
+$ZLIB/libz-ng.a:	$NGX_MAKEFILE
 	cd $ZLIB \\
 	&& if [ -f Makefile ]; then \$(MAKE) distclean; fi \\
 	&& CFLAGS="$ZLIB_OPT" CC="\$(CC)" \\
 		./configure $ZLIB_CONF_OPT \\
-	&& \$(MAKE) libz.a
+	&& \$(MAKE) libz-ng.a
 
 END
 

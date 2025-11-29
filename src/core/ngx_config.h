@@ -141,5 +141,9 @@ typedef intptr_t        ngx_flag_t;
 
 #endif
 
+/* Force enable ZLIB-NG */
+#ifndef NGX_ZLIB_NG
+#define NGX_ZLIB_NG 1
+#endif
 
 #endif /* _NGX_CONFIG_H_INCLUDED_ */

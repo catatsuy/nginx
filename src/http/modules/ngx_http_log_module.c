@@ -9,8 +9,13 @@
 #include <ngx_core.h>
 #include <ngx_http.h>
 
-#if (NGX_ZLIB)
-#include <zlib.h>
+#if defined(NGX_ZLIB_NG)
+# include <zlib-ng.h>
+# define ZPREFIX(x) zng_ ## x
+# define z_stream zng_stream
+#elif defined(NGX_ZLIB)
+# include <zlib.h>
+# define ZPREFIX(x) x
 #endif
 
 
@@ -634,7 +639,7 @@ ngx_http_log_gzip(ngx_fd_t fd, u_char *buf, size_t len, ngx_int_t level,
     zstream.next_out = out;
     zstream.avail_out = size;
 
-    rc = deflateInit2(&zstream, (int) level, Z_DEFLATED, wbits + 16, memlevel,
+    rc = ZPREFIX(deflateInit2)(&zstream, (int) level, Z_DEFLATED, wbits + 16, memlevel,
                       Z_DEFAULT_STRATEGY);
 
     if (rc != Z_OK) {
@@ -647,7 +652,7 @@ ngx_http_log_gzip(ngx_fd_t fd, u_char *buf, size_t len, ngx_int_t level,
                    zstream.next_in, zstream.next_out,
                    zstream.avail_in, zstream.avail_out);
 
-    rc = deflate(&zstream, Z_FINISH);
+    rc = ZPREFIX(deflate)(&zstream, Z_FINISH);
 
     if (rc != Z_STREAM_END) {
         ngx_log_error(NGX_LOG_ALERT, log, 0,
@@ -663,7 +668,7 @@ ngx_http_log_gzip(ngx_fd_t fd, u_char *buf, size_t len, ngx_int_t level,
 
     size -= zstream.avail_out;
 
-    rc = deflateEnd(&zstream);
+    rc = ZPREFIX(deflateEnd)(&zstream);
 
     if (rc != Z_OK) {
         ngx_log_error(NGX_LOG_ALERT, log, 0, "deflateEnd() failed: %d", rc);
